@@ -21,7 +21,7 @@ is_valid_length <- function(x, min_size, max_size)
 compute_sample_size <- function(phi_prior, alpha, beta, p_intro, growth_rate, rho, pi, dconf, delta_t=1, n_steps=1, method="restore", pi_seq=1000)
 {
   # determine max input vector length
-  max_len = max( c(length(phi_prior), 
+  max_len = max( c(length(phi_prior), # phi_prior should probably be restricted to a singleton
                    length(alpha),
                    length(beta),
                    length(p_intro),
@@ -74,6 +74,7 @@ compute_sample_size <- function(phi_prior, alpha, beta, p_intro, growth_rate, rh
   n_required <- rep(NA, n_steps)
   for (j in 1:n_steps)
   {
+    # TO-DO: "restore" vs "maintain"
     n_required[j] <- prevpdf$n_from_cdf(dconf[j], pi[j])
     if (j < n_steps)
     {
