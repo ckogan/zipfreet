@@ -51,9 +51,10 @@ compute_probability_of_freedom <- function(n, phi_prior, alpha, beta, p_intro, g
     prevpdf$update(n[j], alpha[j], beta[j])
   }
   
-  result <- list(n         = n,
-                 phi_prior = prevpdf$phi_prior,
-                 phi_post  = prevpdf$phi_post)
+  result <- list(n           = n,
+                 phi_prior   = prevpdf$phi_prior,
+                 phi_post    = prevpdf$phi_post,
+                 f_posterior = prevpdf$f_posterior_list)
   class(result) <- "diseasefree"
   return( result )  
 }

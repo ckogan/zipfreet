@@ -84,9 +84,10 @@ compute_sample_size <- function(phi_prior, alpha, beta, p_intro, growth_rate, rh
     prevpdf$update(n_required[j], alpha[j], beta[j])
   }
   
-  result <- list(n         = n_required,
-                 phi_prior = prevpdf$phi_prior,
-                 phi_post  = prevpdf$phi_post)
+  result <- list(n           = n_required,
+                 phi_prior   = prevpdf$phi_prior,
+                 phi_post    = prevpdf$phi_post,
+                 f_posterior = prevpdf$f_posterior_list)
   class(result) <- "diseasefree"
   return( result )
 }
