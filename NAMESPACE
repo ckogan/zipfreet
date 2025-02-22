@@ -1,0 +1,6 @@
+export("compute_sample_size")
+export("compute_probability_of_freedom")
+export("summary.diseasefree")
+export("plot.diseasefree")
+S3method(summary,diseasefree)
+S3method(plot,diseasefree)

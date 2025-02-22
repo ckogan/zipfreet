@@ -1,10 +1,5 @@
-source("prevpdf.R")
-
-
-is_valid_length <- function(x, min_size, max_size)
-{
-  return( length(x) == min_size || length(x) == max_size )
-}
+source("R/is_valid_length.R")
+source("R/prevpdf.R")
 
 # phi_prior    - prior probability of freedom
 # alpha        - beta distribution alpha shape parameter
@@ -30,6 +25,12 @@ compute_sample_size <- function(phi_prior, alpha, beta, p_intro, growth_rate, rh
                    length(pi),
                    length(growth_rate),
                    length(delta_t)) )
+  
+  # make sure the method is either "restore" or "maintain"
+  if (method != "restore" && method != "maintain")
+  {
+    stop( simpleError("Invalid method; must be either 'restore' or 'maintain'"))
+  }
   
   # the max vector size drives the number of steps to take
   if (max_len > 1)
@@ -65,7 +66,7 @@ compute_sample_size <- function(phi_prior, alpha, beta, p_intro, growth_rate, rh
     beta = beta[1],
     phi = phi_prior,
     rho = rho[1],
-    pi_seq = pi_seq,
+    pi_seq = seq(0, 1, length.out=pi_seq),
     r = growth_rate[1],
     deltaT = delta_t[1],
     p_no_intro = 1 - p_intro[1]
@@ -74,21 +75,18 @@ compute_sample_size <- function(phi_prior, alpha, beta, p_intro, growth_rate, rh
   n_required <- rep(NA, n_steps)
   for (j in 1:n_steps)
   {
-    # TO-DO: "restore" vs "maintain"
-    n_required[j] <- prevpdf$n_from_cdf(dconf[j], pi[j])
-    if (j < n_steps)
-    {
-      # update needs dynamic rho, r, delta_t, p_no_intro
-      prevpdf$update(n_required[j], alpha[j+1], beta[j+1])
+    threshold_quantile <- dconf[j]
+    if (method == "maintain") {
+      threshold_quantile <- min(c(0.999,threshold_quantile / (1 - p_intro[j])))
     }
+    n_required[j] <- prevpdf$n_from_cdf(threshold_quantile, pi[j])
+    # update needs dynamic rho, r, delta_t, p_no_intro
+    prevpdf$update(n_required[j], alpha[j], beta[j])
   }
   
-  result <- list(n_required=n_required)
+  result <- list(n         = n_required,
+                 phi_prior = prevpdf$phi_prior,
+                 phi_post  = prevpdf$phi_post)
   class(result) <- "diseasefree"
   return( result )
-}
-
-compute_probability_of_freedom <- function()
-{
-  
 }

@@ -1,0 +1,16 @@
+Package: diseasefree
+Type: Package
+Title: Bayesian Disease Freedom Framework
+Version: 0.0.1
+Author: Clark Kogan, Travis Galoppo
+Maintainer: Travis Galoppo <tgaloppo@gmail.com>
+Description: Computes disease freedom probabilities and required sample sizes required to reach target confidence.
+License: file LICENSE
+Encoding: UTF-8
+LazyData: true
+Imports:
+  R6,
+  dplyr,
+  ggplot2,
+  gganimate,
+  gifski
