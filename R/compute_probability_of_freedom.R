@@ -1,15 +1,23 @@
 source("R/is_valid_length.R")
 source("R/prevpdf.R")
 
-# n            - number of samples taken per timestep
-# phi_prior    - prior probability of freedom
-# alpha        - beta distribution alpha shape parameter
-# beta         - beta distribution beta shape parameter
-# p_intro      - probability of introduction
-# growth_rate  - exponential growth rate
-# rho          - unit test sensitivity
-# delta_t      - test time duration
-# pi_seq       - discretization granularity
+#' Compute probability of disease freedom given samples taken per timestep
+#' 
+#' @param n number of samples taken per timestep
+#' @param phi_prior prior probability of freedom
+#' @param alpha beta distribution alpha shape parameter
+#' @param beta beta distribution beta shape parameter
+#' @param p_intro probability of introduction
+#' @param growth_rate exponential growth rate
+#' @param rho unit test sensitivity
+#' @param delta_t test time duration
+#' @param pi_seq discretization granularity
+#' @returns "diseasefree" structure including sample sizes and prior/posterior distributions
+#' @examples
+#' u <- compute_probability_of_freedom(c(21,4,4,4,4), 0.5, 1, 1, 0.04, 0.01, 0.9)
+#' summary(u)
+#' plot(u)
+#' @export
 compute_probability_of_freedom <- function(n, phi_prior, alpha, beta, p_intro, growth_rate, rho, delta_t=1, pi_seq=1000)
 {
   # the size of n drives the number of steps to take

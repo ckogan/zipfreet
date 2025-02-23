@@ -1,3 +1,4 @@
+#' @exportS3Method
 summary.diseasefree <- function(object, ...)
 {
   nrow <- length(object$n)

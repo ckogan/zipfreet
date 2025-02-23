@@ -1,18 +1,27 @@
 source("R/is_valid_length.R")
 source("R/prevpdf.R")
 
-# phi_prior    - prior probability of freedom
-# alpha        - beta distribution alpha shape parameter
-# beta         - beta distribution beta shape parameter
-# p_intro      - probability of introduction
-# rho          - unit test sensitivity
-# pi           - design threshold
-# dconf        - desired confidence
-# growth_rate  - exponential growth rate
-# delta_t      - test time duration
-# n_steps      - number of time units to step
-# method       - "restore" or "maintain"
-# pi_seq       - discretization granularity
+#' Compute the sample size requirements to meet a specified design
+#' threshold at a specified confidence.
+#' 
+#' @param phi_prior prior probability of freedom
+#' @param alpha beta distribution alpha shape parameter
+#' @param beta  beta distribution beta shape parameter
+#' @param p_intro probability of introduction
+#' @param rho unit test sensitivity
+#' @param pi design threshold
+#' @param dconf desired confidence
+#' @param growth_rate exponential growth rate
+#' @param delta_t test time duration
+#' @param n_steps number of time units to step
+#' @param method  "restore" or "maintain"
+#' @param pi_seq discretization granularity
+#' @returns "diseasefree" structure including sample sizes and prior/posterior distributions
+#' @examples
+#' u <- compute_sample_size(0.5, 1, 1, 0.04, 0.01, 0.9, 0, 0.95, n_steps=5)
+#' summary(u)
+#' plot(u)
+#' @export
 compute_sample_size <- function(phi_prior, alpha, beta, p_intro, growth_rate, rho, pi, dconf, delta_t=1, n_steps=1, method="restore", pi_seq=1000)
 {
   # determine max input vector length

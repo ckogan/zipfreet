@@ -15,3 +15,4 @@ Imports:
   ggplot2,
   gganimate,
   gifski
+RoxygenNote: 7.3.2
