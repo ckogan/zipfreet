@@ -82,6 +82,7 @@ compute_sample_size <- function(phi_prior, alpha, beta, p_intro, growth_rate, rh
   )
   
   n_required <- rep(NA, n_steps)
+  p_eff_freedom <- rep(NA, n_steps)
   for (j in 1:n_steps)
   {
     threshold_quantile <- dconf[j]
@@ -91,12 +92,14 @@ compute_sample_size <- function(phi_prior, alpha, beta, p_intro, growth_rate, rh
     n_required[j] <- prevpdf$n_from_cdf(threshold_quantile, pi[j])
     # update needs dynamic rho, r, delta_t, p_no_intro
     prevpdf$update(n_required[j], alpha[j], beta[j])
+    p_eff_freedom[j] <- prevpdf$compute_cdf(pi[j], step=j)
   }
   
-  result <- list(n           = n_required,
-                 phi_prior   = prevpdf$phi_prior,
-                 phi_post    = prevpdf$phi_post,
-                 f_posterior = prevpdf$f_posterior_list)
+  result <- list(n             = n_required,
+                 phi_prior     = prevpdf$phi_prior,
+                 phi_post      = prevpdf$phi_post,
+                 p_eff_freedom = p_eff_freedom,
+                 f_posterior   = prevpdf$f_posterior_list)
   class(result) <- "diseasefree"
   return( result )
 }

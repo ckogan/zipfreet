@@ -12,6 +12,7 @@ compute_probability_of_freedom(
   p_intro,
   growth_rate,
   rho,
+  pi = 0,
   delta_t = 1,
   pi_seq = 1000
 )
@@ -31,6 +32,8 @@ compute_probability_of_freedom(
 
 \item{rho}{unit test sensitivity}
 
+\item{pi}{design threshold}
+
 \item{delta_t}{test time duration}
 
 \item{pi_seq}{discretization granularity}
@@ -42,7 +45,7 @@ compute_probability_of_freedom(
 Compute probability of disease freedom given samples taken per timestep
 }
 \examples{
-u <- compute_probability_of_freedom(c(21,4,4,4,4), 0.5, 1, 1, 0.04, 0.01, 0.9)
+u <- compute_probability_of_freedom(c(21,4,4,4,4), 0.5, 1, 1, 0.04, 0.01, 0.9, 0.0)
 summary(u)
 plot(u)
 }
