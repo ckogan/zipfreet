@@ -14,7 +14,9 @@ source("R/prevpdf.R")
 #' @param growth_rate exponential growth rate
 #' @param delta_t test time duration
 #' @param n_steps number of time units to step
-#' @param method  "restore" or "maintain"
+#' @param method  "restore" or "maintain" - Note that when using "maintain"
+#'                with a time varying p_intro, you must provide p_intro
+#'                for one step beyond the calculation horizon.
 #' @param pi_seq discretization granularity
 #' @returns "diseasefree" structure including sample sizes and prior/posterior distributions
 #' @examples
@@ -24,9 +26,14 @@ source("R/prevpdf.R")
 #' @export
 compute_sample_size <- function(phi_prior, alpha, beta, p_intro, growth_rate, rho, pi, dconf, delta_t=1, n_steps=1, method="restore", pi_seq=1000)
 {
+  # phi_prior must be length 1
+  if (length(phi_prior) > 1)
+  {
+    stop( simpleError("phi_prior must be length 1"))
+  }
+  
   # determine max input vector length
-  max_len = max( c(length(phi_prior), # phi_prior should probably be restricted to a singleton
-                   length(alpha),
+  max_len = max( c(length(alpha),
                    length(beta),
                    length(p_intro),
                    length(rho),
@@ -47,11 +54,22 @@ compute_sample_size <- function(phi_prior, alpha, beta, p_intro, growth_rate, rh
     n_steps = max_len
   }
   
+  # if the method is "maintain", then p_intro needs to be one entry longer
+  # than the number of steps, since we need p_intro for the subsequent
+  # step to make the threshold adjustment
+  if (method == "maintain")
+  {
+    p_intro_len_adj <- 1
+  }
+  else
+  {
+    p_intro_len_adj <- 0
+  }
+  
   # if any input vector has length > 1 but < n_steps, error out
-  if (!is_valid_length(phi_prior, 1, n_steps)) stop(simpleError("Vector length mismatch: 'phi_prior'"))
   if (!is_valid_length(alpha, 1, n_steps)) stop(simpleError("Vector length mismatch: 'alpha'"))
   if (!is_valid_length(beta, 1, n_steps)) stop(simpleError("Vector length mismatch: 'beta'"))
-  if (!is_valid_length(p_intro, 1, n_steps)) stop(simpleError("Vector length mismatch: 'p_intro'"))
+  if (!is_valid_length(p_intro, 1, n_steps + p_intro_len_adj)) stop(simpleError("Vector length mismatch: 'p_intro'"))
   if (!is_valid_length(rho, 1, n_steps)) stop(simpleError("Vector length mismatch: 'rho'"))
   if (!is_valid_length(dconf, 1, n_steps)) stop(simpleError("Vector length mismatch: 'dconf'"))
   if (!is_valid_length(pi, 1, n_steps)) stop(simpleError("Vector length mismatch: 'pi'"))
@@ -59,10 +77,9 @@ compute_sample_size <- function(phi_prior, alpha, beta, p_intro, growth_rate, rh
   if (!is_valid_length(delta_t, 1, n_steps)) stop(simpleError("Vector length mismatch: 'delta_t'"))
   
   # make all vectors the same length (matching number of steps)
-  if (length(phi_prior) < n_steps) phi_prior <- rep(phi_prior, n_steps)
   if (length(alpha) < n_steps) alpha <- rep(alpha, n_steps)
   if (length(beta) < n_steps) beta <- rep(beta, n_steps)
-  if (length(p_intro) < n_steps) p_intro <- rep(p_intro, n_steps)
+  if (length(p_intro) < n_steps + p_intro_len_adj) p_intro <- rep(p_intro, n_steps + p_intro_len_adj)
   if (length(rho) < n_steps) rho <- rep(rho, n_steps)
   if (length(dconf) < n_steps) dconf <- rep(dconf, n_steps)
   if (length(pi) < n_steps) pi <- rep(pi, n_steps)
@@ -87,7 +104,7 @@ compute_sample_size <- function(phi_prior, alpha, beta, p_intro, growth_rate, rh
   {
     threshold_quantile <- dconf[j]
     if (method == "maintain") {
-      threshold_quantile <- min(c(0.999,threshold_quantile / (1 - p_intro[j])))
+      threshold_quantile <- min(c(0.999, threshold_quantile / (1 - p_intro[j+1])))
     }
     n_required[j] <- prevpdf$n_from_cdf(threshold_quantile, pi[j])
     # update needs dynamic rho, r, delta_t, p_no_intro

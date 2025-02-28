@@ -41,7 +41,9 @@ compute_sample_size(
 
 \item{n_steps}{number of time units to step}
 
-\item{method}{"restore" or "maintain"}
+\item{method}{"restore" or "maintain" - Note that when using "maintain"
+with a time varying p_intro, you must provide p_intro
+for one step beyond the calculation horizon.}
 
 \item{pi_seq}{discretization granularity}
 }
