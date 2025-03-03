@@ -1,6 +1,5 @@
 library(testthat)
 library(here)
-source(here('code/prevpdf.R'))
 context("Testing PrevPdf Class")
 
 test_that("Correct phi_post values over 3 time points", {
