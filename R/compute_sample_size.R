@@ -90,33 +90,31 @@ compute_sample_size <- function(phi_prior, alpha, beta, p_intro, growth_rate, rh
   prevpdf <- PrevPdf$new(
     alpha = alpha[1],
     beta = beta[1],
-    phi = phi_prior,
-    rho = rho[1],
-    pi_seq = seq(0, 1, length.out=pi_seq),
-    r = growth_rate[1],
-    deltaT = delta_t[1],
-    p_no_intro = 1 - p_intro[1]
+    phi_prior = phi_prior,
+    pi_seq = seq(0, 1, length.out=pi_seq)
   )
   
   n_required <- rep(NA, n_steps)
-  p_eff_freedom <- rep(NA, n_steps)
+  p_eff_freedom_prior <- rep(NA, n_steps)
+  p_eff_freedom_post  <- rep(NA, n_steps)
   for (j in 1:n_steps)
   {
     threshold_quantile <- dconf[j]
     if (method == "maintain") {
       threshold_quantile <- min(c(0.999, threshold_quantile / (1 - p_intro[j+1])))
     }
-    n_required[j] <- prevpdf$n_from_cdf(threshold_quantile, pi[j])
-    # update needs dynamic rho, r, delta_t, p_no_intro
-    prevpdf$update(n_required[j], alpha[j], beta[j])
-    p_eff_freedom[j] <- prevpdf$compute_cdf(pi[j], step=j)
+    n_required[j] <- prevpdf$n_from_cdf(threshold_quantile, pi[j], rho[j])
+    prevpdf$update(n_required[j], alpha[j], beta[j], rho[j], growth_rate[j], delta_t[j], 1 - p_intro[j])
+    p_eff_freedom_prior[j] <- prevpdf$compute_posterior_cdf_given_n(pi[j], 0, rho[j])
+    p_eff_freedom_post[j] <- prevpdf$compute_cdf(pi[j], step=j)
   }
   
-  result <- list(n             = n_required,
-                 phi_prior     = prevpdf$phi_prior,
-                 phi_post      = prevpdf$phi_post,
-                 p_eff_freedom = p_eff_freedom,
-                 f_posterior   = prevpdf$f_posterior_list)
+  result <- list(n                   = n_required,
+                 phi_prior           = prevpdf$phi_prior,
+                 phi_post            = prevpdf$phi_post,
+                 p_eff_freedom_prior = p_eff_freedom_prior,
+                 p_eff_freedom_post  = p_eff_freedom_post,
+                 f_posterior         = prevpdf$f_posterior_list)
   class(result) <- "diseasefree"
   return( result )
 }
