@@ -31,27 +31,11 @@ compute_sample_size <- function(phi_prior, alpha, beta, p_intro, growth_rate, rh
   {
     stop( simpleError("phi_prior must be length 1"))
   }
-  
-  # determine max input vector length
-  max_len = max( c(length(alpha),
-                   length(beta),
-                   length(p_intro),
-                   length(rho),
-                   length(dconf),
-                   length(pi),
-                   length(growth_rate),
-                   length(delta_t)) )
-  
+
   # make sure the method is either "restore" or "maintain"
   if (method != "restore" && method != "maintain")
   {
     stop( simpleError("Invalid method; must be either 'restore' or 'maintain'"))
-  }
-  
-  # the max vector size drives the number of steps to take
-  if (max_len > 1)
-  {
-    n_steps = max_len
   }
   
   # if the method is "maintain", then p_intro needs to be one entry longer
@@ -64,6 +48,22 @@ compute_sample_size <- function(phi_prior, alpha, beta, p_intro, growth_rate, rh
   else
   {
     p_intro_len_adj <- 0
+  }  
+  
+  # determine max input vector length
+  max_len = max( c(length(alpha),
+                   length(beta),
+                   length(p_intro) - p_intro_len_adj,
+                   length(rho),
+                   length(dconf),
+                   length(pi),
+                   length(growth_rate),
+                   length(delta_t)) )
+  
+  # the max vector size drives the number of steps to take
+  if (max_len > 1)
+  {
+    n_steps = max_len
   }
   
   # if any input vector has length > 1 but < n_steps, error out
