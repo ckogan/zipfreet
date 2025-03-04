@@ -61,7 +61,7 @@ compute_probability_of_freedom <- function(n, phi_prior, alpha, beta, p_intro, g
   for (j in 1:n_steps)
   {
     prevpdf$update(n[j], alpha[j], beta[j], rho[j], growth_rate[j], delta_t[j], 1 - p_intro[j])
-    p_eff_freedom_prior[j] <- prevpdf$compute_posterior_cdf_given_n(pi[j], 0, rho[j])
+    p_eff_freedom_prior[j] <- prevpdf$compute_cdf(pi[j], step=j, prior=T)
     p_eff_freedom_post[j] <- prevpdf$compute_cdf(pi[j], step=j)
   }
   

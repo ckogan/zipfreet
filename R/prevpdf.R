@@ -237,13 +237,20 @@ PrevPdf <- R6Class("PrevPdf",
 
                      },
 
-                     compute_cdf = function(pi, step = NULL) {
+                     compute_cdf = function(pi, step = NULL, prior=F) {
                        if (is.null(step)) step <- self$ts
                        # get zero inflation part
-                       phi <- self$phi_post[step]
-                       f_posterior_current <- self$f_posterior_list[[step]]
-
-                       phi + integrate(f_posterior_current, 0, pi)$value
+                       if (prior)
+                       {
+                         phi <- self$phi_prior[step]
+                         fn <- self$f_prior_list[[step]]
+                       }
+                       else
+                       {
+                         phi <- self$phi_post[step]
+                         fn <- self$f_posterior_list[[step]]
+                       }
+                       phi + integrate(fn, 0, pi)$value
                      },
 
 

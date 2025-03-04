@@ -105,7 +105,7 @@ compute_sample_size <- function(phi_prior, alpha, beta, p_intro, growth_rate, rh
     }
     n_required[j] <- prevpdf$n_from_cdf(threshold_quantile, pi[j], rho[j])
     prevpdf$update(n_required[j], alpha[j], beta[j], rho[j], growth_rate[j], delta_t[j], 1 - p_intro[j])
-    p_eff_freedom_prior[j] <- prevpdf$compute_posterior_cdf_given_n(pi[j], 0, rho[j])
+    p_eff_freedom_prior[j] <- prevpdf$compute_cdf(pi[j], step=j, prior=T)
     p_eff_freedom_post[j] <- prevpdf$compute_cdf(pi[j], step=j)
   }
   
