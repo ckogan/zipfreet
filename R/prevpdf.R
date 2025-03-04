@@ -21,8 +21,9 @@ PrevPdf <- R6Class("PrevPdf",
                      pi_seq = NULL,
                      p_no_intro = NULL,
                      f_intro = NULL,
-                     r = NULL,
                      deltaT = NULL,
+                     r = NULL,
+                     sigma_r = NULL,
                      initial_params = NULL,
 
                      # Helper function to expand parameters
@@ -49,11 +50,13 @@ PrevPdf <- R6Class("PrevPdf",
                        self$phi_prior <- c(self$initial_params$phi_prior)
                        self$phi_post <- numeric(0)
                        self$rho <- numeric(0)
+                       self$r <- numeric(0)
+                       self$sigma_r <- numeric(0)
                        self$theta <- numeric(0)
                        self$pi_seq <- self$initial_params$pi_seq
-                       self$r <- numeric(0)
                        self$deltaT <- numeric(0)
                        self$p_no_intro <- c(self$phi_prior)
+
 
                        # Initialize functions that depend on parameters
                        self$f_prior_list <- list(self$store(self$f_pi_pos(self$alpha[1], self$beta[1], self$phi_prior[1])))
@@ -142,8 +145,27 @@ PrevPdf <- R6Class("PrevPdf",
                        exp(r * deltaT) / (pi + (1 - pi) * exp(r * deltaT)) ^ 2
                      },
 
-                     f_pi_time_update = function(f, r, deltaT) {
-                       function(pi) self$dGinv(pi, r, deltaT) * f(self$Ginv(pi, r, deltaT))
+                     # f_pi_time_update = function(f, r, deltaT) {
+                     #   function(pi) self$dGinv(pi, r, deltaT) * f(self$Ginv(pi, r, deltaT))
+                     # },
+                     f_pi_time_update = function(f, mu_r, sigma_r, deltaT) {
+                       if(sigma_r  == 0.0) {
+                         function(pi) self$dGinv(pi, mu_r, deltaT) * f(self$Ginv(pi, mu_r, deltaT)) 
+                       } else {
+                         myfun <- function(pi) {
+                           integral_value <- tryCatch({
+                             integrate(
+                               function(x) self$dGinv(pi, x, deltaT) * f(self$Ginv(pi, x, deltaT)) * dnorm(x, mu_r, sigma_r),
+                               mu_r - 3*sigma_r,
+                               mu_r + 3*sigma_r
+                             )$value
+                           }, error = function(e) {
+                             stop("Integration failed in f_pi_time_update.", conditionMessage(e))
+                           })
+                           integral_value
+                         }
+                         function(x) vapply(x, myfun, 0)
+                       }
                      },
 
                      f_pi_introduction_update = function(f_pi, phi_t, f_intro, p_no_intro) {
@@ -171,14 +193,16 @@ PrevPdf <- R6Class("PrevPdf",
                        }
                        function(x) vapply(x, f, 0)
                      },
-                     update = function(N, alpha = NULL, beta = NULL, rho = NULL, r = NULL, deltaT = NULL, p_no_intro = NULL) {
+                     update = function(N, alpha = NULL, beta = NULL, rho = NULL,  r = NULL, sigma_r = NULL, deltaT = NULL, p_no_intro = NULL) {
                        if(length(N) > 1) stop("N must be length 1")
                        if(length(alpha) > 1) stop("alpha must be length 1")
                        if(length(beta) > 1) stop("beta must be length 1")
                        if (length(rho) > 1) stop("rho_i must be length 1")
                        if (length(r) > 1)   stop("r_i must be length 1")
+                       if (length(sigma_r) > 1) stop("sigma_r must be length 1")
                        if (length(deltaT) > 1) stop("deltaT_i must be length 1")
                        if (length(p_no_intro) > 1) stop("p_no_intro_i must be length 1")
+
                        
                        ts <- self$ts
                        
@@ -187,8 +211,15 @@ PrevPdf <- R6Class("PrevPdf",
                        beta <- private$last_if_null(beta, "beta")
                        rho <- private$last_if_null(rho, "rho")
                        r <- private$last_if_null(r, "r")
+                       if(is.null(sigma_r)) {
+                         if(length(self$sigma_r == 0)) 
+                           sigma_r <- 0.0
+                         else
+                           sigma_r <- self$sigma_r[ts]
+                       }                       
                        deltaT <- private$last_if_null(deltaT, "deltaT")
                        p_no_intro <- private$last_if_null(p_no_intro, "p_no_intro")
+
                        
                        lik <- self$likelihood(N, rho)
 
@@ -208,10 +239,11 @@ PrevPdf <- R6Class("PrevPdf",
                        self$f_posterior_list[[ts]] <- self$f_posterior
                        
                        # Time (logistic) update
-                       f_preintro <- self$store(self$f_pi_time_update(self$f_posterior, r, deltaT))
+                       f_preintro <- self$store(self$f_pi_time_update(self$f_posterior, r, sigma_r, deltaT))
                        
                        # Record growth params
                        self$r[ts] <- r
+                       self$sigma_r[ts] <- sigma_r
                        self$deltaT[ts] <- deltaT
 
                        # Increment time step at the end
@@ -302,13 +334,18 @@ PrevPdf <- R6Class("PrevPdf",
                        return(low)
                      },
 
-                     apply_sampling_schedule = function(N_samp, alpha = NULL, beta = NULL, rho = NULL, r = NULL, deltaT = NULL, p_no_intro = NULL) {
+                     apply_sampling_schedule = function(N_samp, alpha = NULL, beta = NULL, rho = NULL, r = NULL, sigma_r = NULL, deltaT = NULL, p_no_intro = NULL) {
                        num_steps <- length(N_samp)
-                       
                        alpha <- private$last_if_null(alpha, "alpha")
                        beta <- private$last_if_null(beta, "beta")
                        rho <- private$last_if_null(rho, "rho")
                        r <- private$last_if_null(r, "r")
+                       if(is.null(sigma_r)) {
+                         if(length(self$sigma_r) == 0) 
+                           sigma_r <- 0.0
+                         else
+                           sigma_r <- self$sigma_r[self$ts]
+                       }   
                        deltaT <- private$last_if_null(deltaT, "deltaT")
                        p_no_intro <- private$last_if_null(p_no_intro, "p_no_intro")
 
@@ -317,16 +354,18 @@ PrevPdf <- R6Class("PrevPdf",
                        beta_list <- self$.expand_param(beta, num_steps, NA)
                        rho_list <- self$.expand_param(rho, num_steps, NA)
                        r_list <- self$.expand_param(r, num_steps, NA)
+                       sigma_r_list <- self$.expand_param(sigma_r, num_steps, NA)
+                       
                        deltaT_list <- self$.expand_param(deltaT, num_steps, NA)
                        p_no_intro_list <- self$.expand_param(p_no_intro, num_steps, NA)
 
                        for (i in seq_len(num_steps)) {
                          N <- N_samp[i]
-                         self$update(N, alpha = alpha_list[i], beta = beta_list[i], rho = rho_list[i], r = r_list[i], deltaT = deltaT_list[i], p_no_intro = p_no_intro_list[i])
+                         self$update(N, alpha = alpha_list[i], beta = beta_list[i], rho = rho_list[i], r = r_list[i], sigma_r = sigma_r_list[i], deltaT = deltaT_list[i], p_no_intro = p_no_intro_list[i])
                        }
                      },
 
-                     determine_schedule_counts = function(desired_cdf_level, pi_value, sampling_timing = NULL, num_steps = NULL, alpha = NULL, beta = NULL, rho = NULL, r = NULL, deltaT = NULL, p_no_intro = NULL) {
+                     determine_schedule_counts = function(desired_cdf_level, pi_value, sampling_timing = NULL, num_steps = NULL, alpha = NULL, beta = NULL, rho = NULL, r = NULL, sigma_r = NULL, deltaT = NULL, p_no_intro = NULL) {
                        if (is.null(sampling_timing)) {
                          if (is.null(num_steps)) {
                            stop("Please provide 'num_steps' when 'samp_sched' is NULL.")
@@ -340,6 +379,12 @@ PrevPdf <- R6Class("PrevPdf",
                        beta <- private$last_if_null(beta, "beta")
                        rho <- private$last_if_null(rho, "rho")
                        r <- private$last_if_null(r, "r")
+                       if(is.null(sigma_r)) {
+                         if(length(self$sigma_r) == 0) 
+                           sigma_r <- 0.0
+                         else
+                           sigma_r <- self$sigma_r[self$ts]
+                       }   
                        deltaT <- private$last_if_null(deltaT, "deltaT")
                        p_no_intro <- private$last_if_null(p_no_intro, "p_no_intro")
                        
@@ -348,6 +393,7 @@ PrevPdf <- R6Class("PrevPdf",
                        beta_list <- self$.expand_param(beta, num_steps, NA)
                        rho_list <- self$.expand_param(rho, num_steps, NA)
                        r_list <- self$.expand_param(r, num_steps, NA)
+                       sigma_r_list <- self$.expand_param(sigma_r, num_steps, NA)
                        deltaT_list <- self$.expand_param(deltaT, num_steps, NA)
                        p_no_intro_list <- self$.expand_param(p_no_intro, num_steps, NA)
 
@@ -357,7 +403,7 @@ PrevPdf <- R6Class("PrevPdf",
                          } else {
                            n_required <- self$n_from_cdf(desired_cdf_level, pi_value, rho_list[i])
                          }
-                         self$update(n_required, alpha = alpha_list[i], beta = beta_list[i], rho = rho_list[i], r = r_list[i], deltaT = deltaT_list[i], p_no_intro = p_no_intro_list[i])
+                         self$update(n_required, alpha = alpha_list[i], beta = beta_list[i], rho = rho_list[i], r = r_list[i], sigma_r = sigma_r_list[i], deltaT = deltaT_list[i], p_no_intro = p_no_intro_list[i])
                        }
                      },
 
