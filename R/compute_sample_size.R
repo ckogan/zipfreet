@@ -5,32 +5,45 @@ source("R/prevpdf.R")
 #' threshold at a specified confidence.
 #' 
 #' @param phi_prior prior probability of freedom
-#' @param alpha beta distribution alpha shape parameter
-#' @param beta  beta distribution beta shape parameter
-#' @param p_intro probability of introduction
+#' @param alpha_prior beta distribution alpha parameter for prior prevalence distribution
+#' @param beta_prior beta distribution beta parameter for prior prevalence distribution
+#' @param alpha_intro beta distribution alpha shape parameter for introduction distribution
+#' @param beta_intro beta distribution beta shape parameter for introduction distribution
+#' @param p_intro probability of introduction; if provided as a vector, the
+#'                initial entry corresponds to the probability of introduction
+#'                at time step 2.
 #' @param rho unit test sensitivity
 #' @param pi design threshold
 #' @param dconf desired confidence
 #' @param growth_rate exponential growth rate
 #' @param delta_t test time duration
 #' @param n_steps number of time units to step
-#' @param method  "restore" or "maintain" - Note that when using "maintain"
-#'                with a time varying p_intro, you must provide p_intro
-#'                for one step beyond the calculation horizon.
+#' @param method  "restore" or "maintain"
 #' @param pi_seq discretization granularity
 #' @returns "diseasefree" structure including sample sizes and prior/posterior distributions
 #' @examples
-#' u <- compute_sample_size(0.5, 1, 1, 0.04, 0.01, 0.9, 0, 0.95, n_steps=5)
+#' u <- compute_sample_size(0.5, 1, 1, 1, 1, 0.04, 0.01, 0.9, 0, 0.95, n_steps=5)
 #' summary(u)
 #' plot(u)
 #' @export
-compute_sample_size <- function(phi_prior, alpha, beta, p_intro, growth_rate, rho, pi, dconf, delta_t=1, n_steps=1, method="restore", pi_seq=1000)
+compute_sample_size <- function(phi_prior, alpha_prior, beta_prior, alpha_intro, beta_intro, p_intro, growth_rate, rho, pi, dconf, delta_t=1, n_steps=1, method="restore", pi_seq=1000)
 {
   # phi_prior must be length 1
   if (length(phi_prior) > 1)
   {
     stop( simpleError("phi_prior must be length 1"))
   }
+  
+  # alpha_prior, beta_prior should be length 1
+  if (length(alpha_prior) > 1)
+  {
+    stop( simpleError("alpha_prior must be length 1"))
+  }
+  
+  if (length(beta_prior) > 1)
+  {
+    stop( simpleError("beta_prior must be length 1"))
+  }  
 
   # make sure the method is either "restore" or "maintain"
   if (method != "restore" && method != "maintain")
@@ -38,22 +51,10 @@ compute_sample_size <- function(phi_prior, alpha, beta, p_intro, growth_rate, rh
     stop( simpleError("Invalid method; must be either 'restore' or 'maintain'"))
   }
   
-  # if the method is "maintain", then p_intro needs to be one entry longer
-  # than the number of steps, since we need p_intro for the subsequent
-  # step to make the threshold adjustment
-  if (method == "maintain")
-  {
-    p_intro_len_adj <- 1
-  }
-  else
-  {
-    p_intro_len_adj <- 0
-  }  
-  
   # determine max input vector length
-  max_len = max( c(length(alpha),
-                   length(beta),
-                   length(p_intro) - p_intro_len_adj,
+  max_len = max( c(length(alpha_intro),
+                   length(beta_intro),
+                   length(p_intro),
                    length(rho),
                    length(dconf),
                    length(pi),
@@ -67,9 +68,9 @@ compute_sample_size <- function(phi_prior, alpha, beta, p_intro, growth_rate, rh
   }
   
   # if any input vector has length > 1 but < n_steps, error out
-  if (!is_valid_length(alpha, 1, n_steps)) stop(simpleError("Vector length mismatch: 'alpha'"))
-  if (!is_valid_length(beta, 1, n_steps)) stop(simpleError("Vector length mismatch: 'beta'"))
-  if (!is_valid_length(p_intro, 1, n_steps + p_intro_len_adj)) stop(simpleError("Vector length mismatch: 'p_intro'"))
+  if (!is_valid_length(alpha_intro, 1, n_steps)) stop(simpleError("Vector length mismatch: 'alpha_intro'"))
+  if (!is_valid_length(beta_intro, 1, n_steps)) stop(simpleError("Vector length mismatch: 'beta_intro'"))
+  if (!is_valid_length(p_intro, 1, n_steps)) stop(simpleError("Vector length mismatch: 'p_intro'"))
   if (!is_valid_length(rho, 1, n_steps)) stop(simpleError("Vector length mismatch: 'rho'"))
   if (!is_valid_length(dconf, 1, n_steps)) stop(simpleError("Vector length mismatch: 'dconf'"))
   if (!is_valid_length(pi, 1, n_steps)) stop(simpleError("Vector length mismatch: 'pi'"))
@@ -77,9 +78,9 @@ compute_sample_size <- function(phi_prior, alpha, beta, p_intro, growth_rate, rh
   if (!is_valid_length(delta_t, 1, n_steps)) stop(simpleError("Vector length mismatch: 'delta_t'"))
   
   # make all vectors the same length (matching number of steps)
-  if (length(alpha) < n_steps) alpha <- rep(alpha, n_steps)
-  if (length(beta) < n_steps) beta <- rep(beta, n_steps)
-  if (length(p_intro) < n_steps + p_intro_len_adj) p_intro <- rep(p_intro, n_steps + p_intro_len_adj)
+  if (length(alpha_intro) < n_steps) alpha_intro <- rep(alpha_intro, n_steps)
+  if (length(beta_intro) < n_steps) beta_intro <- rep(beta_intro, n_steps)
+  if (length(p_intro) < n_steps) p_intro <- rep(p_intro, n_steps)
   if (length(rho) < n_steps) rho <- rep(rho, n_steps)
   if (length(dconf) < n_steps) dconf <- rep(dconf, n_steps)
   if (length(pi) < n_steps) pi <- rep(pi, n_steps)
@@ -88,8 +89,8 @@ compute_sample_size <- function(phi_prior, alpha, beta, p_intro, growth_rate, rh
   
   # Create an instance of PrevPdf
   prevpdf <- PrevPdf$new(
-    alpha = alpha[1],
-    beta = beta[1],
+    alpha = alpha_prior,
+    beta = beta_prior,
     phi_prior = phi_prior,
     pi_seq = seq(0, 1, length.out=pi_seq)
   )
@@ -101,10 +102,10 @@ compute_sample_size <- function(phi_prior, alpha, beta, p_intro, growth_rate, rh
   {
     threshold_quantile <- dconf[j]
     if (method == "maintain") {
-      threshold_quantile <- min(c(0.999, threshold_quantile / (1 - p_intro[j+1])))
+      threshold_quantile <- min(c(0.999, threshold_quantile / (1 - p_intro[j])))
     }
     n_required[j] <- prevpdf$n_from_cdf(threshold_quantile, pi[j], rho[j])
-    prevpdf$update(n_required[j], alpha[j], beta[j], rho[j], growth_rate[j], delta_t[j], 1 - p_intro[j])
+    prevpdf$update(n_required[j], alpha_intro[j], beta_intro[j], rho[j], growth_rate[j], delta_t[j], 1 - p_intro[j])
     p_eff_freedom_prior[j] <- prevpdf$compute_cdf(pi[j], step=j, prior=T)
     p_eff_freedom_post[j] <- prevpdf$compute_cdf(pi[j], step=j)
   }
@@ -114,6 +115,7 @@ compute_sample_size <- function(phi_prior, alpha, beta, p_intro, growth_rate, rh
                  phi_post            = prevpdf$phi_post,
                  p_eff_freedom_prior = p_eff_freedom_prior,
                  p_eff_freedom_post  = p_eff_freedom_post,
+                 f_prior             = prevpdf$f_prior_list,
                  f_posterior         = prevpdf$f_posterior_list)
   class(result) <- "diseasefree"
   return( result )

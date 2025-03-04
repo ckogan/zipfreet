@@ -3,7 +3,7 @@ library(here)
 context("Testing PrevPdf Class")
 
 test_that("Correct phi_post values over 3 time points", {
-  prevpdf_test <- PrevPdf$new(
+  prevpdf_test <- PrevPdfExt$new(
     alpha = 1,
     beta = 8,
     phi = 0.5,
@@ -36,7 +36,7 @@ test_that("Correct phi_post values over 3 time points", {
 
 test_that("determine_schedule_counts produces correct sample counts and phi_post", {
   # Initialize
-  prevpdf_test <- PrevPdf$new(
+  prevpdf_test <- PrevPdfExt$new(
     alpha = 1,
     beta = 8,
     phi = 0.5,
@@ -72,7 +72,7 @@ test_that("determine_schedule_counts produces correct sample counts and phi_post
 
 test_that("Special Case: Unit sensitivity, no growth, alpha=1", {
   # Initialize
-  prevpdf_test <- PrevPdf$new(
+  prevpdf_test <- PrevPdfExt$new(
     alpha = 1,
     beta = 8,
     phi = 0.5,
