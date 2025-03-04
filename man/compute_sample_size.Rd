@@ -7,8 +7,10 @@ threshold at a specified confidence.}
 \usage{
 compute_sample_size(
   phi_prior,
-  alpha,
-  beta,
+  alpha_prior,
+  beta_prior,
+  alpha_intro,
+  beta_intro,
   p_intro,
   growth_rate,
   rho,
@@ -23,11 +25,17 @@ compute_sample_size(
 \arguments{
 \item{phi_prior}{prior probability of freedom}
 
-\item{alpha}{beta distribution alpha shape parameter}
+\item{alpha_prior}{beta distribution alpha parameter for prior prevalence distribution}
 
-\item{beta}{beta distribution beta shape parameter}
+\item{beta_prior}{beta distribution beta parameter for prior prevalence distribution}
 
-\item{p_intro}{probability of introduction}
+\item{alpha_intro}{beta distribution alpha shape parameter for introduction distribution}
+
+\item{beta_intro}{beta distribution beta shape parameter for introduction distribution}
+
+\item{p_intro}{probability of introduction; if provided as a vector, the
+initial entry corresponds to the probability of introduction
+at time step 2.}
 
 \item{growth_rate}{exponential growth rate}
 
@@ -41,9 +49,7 @@ compute_sample_size(
 
 \item{n_steps}{number of time units to step}
 
-\item{method}{"restore" or "maintain" - Note that when using "maintain"
-with a time varying p_intro, you must provide p_intro
-for one step beyond the calculation horizon.}
+\item{method}{"restore" or "maintain"}
 
 \item{pi_seq}{discretization granularity}
 }
@@ -55,7 +61,7 @@ Compute the sample size requirements to meet a specified design
 threshold at a specified confidence.
 }
 \examples{
-u <- compute_sample_size(0.5, 1, 1, 0.04, 0.01, 0.9, 0, 0.95, n_steps=5)
+u <- compute_sample_size(0.5, 1, 1, 1, 1, 0.04, 0.01, 0.9, 0, 0.95, n_steps=5)
 summary(u)
 plot(u)
 }
