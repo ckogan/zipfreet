@@ -5,9 +5,13 @@ source("R/prevpdf.R")
 #' 
 #' @param n number of samples taken per timestep
 #' @param phi_prior prior probability of freedom
-#' @param alpha beta distribution alpha shape parameter
-#' @param beta beta distribution beta shape parameter
-#' @param p_intro probability of introduction
+#' @param alpha_prior beta distribution alpha parameter for prior prevalence distribution
+#' @param beta_prior beta distribution beta parameter for prior prevalence distribution
+#' @param alpha_intro beta distribution alpha shape parameter
+#' @param beta_intro beta distribution beta shape parameter
+#' @param p_intro probability of introduction; if provided as a vector, the
+#'                initial entry corresponds to the probability of introduction
+#'                at time step 2.
 #' @param growth_rate exponential growth rate
 #' @param rho unit test sensitivity
 #' @param pi design threshold
@@ -15,11 +19,11 @@ source("R/prevpdf.R")
 #' @param pi_seq discretization granularity
 #' @returns "diseasefree" structure including sample sizes and prior/posterior distributions
 #' @examples
-#' u <- compute_probability_of_freedom(c(21,4,4,4,4), 0.5, 1, 1, 0.04, 0.01, 0.9, 0.0)
+#' u <- compute_probability_of_freedom(c(21,4,4,4,4), 0.5, 1, 1, 1, 1, 0.04, 0.01, 0.9, 0.0)
 #' summary(u)
 #' plot(u)
 #' @export
-compute_probability_of_freedom <- function(n, phi_prior, alpha, beta, p_intro, growth_rate, rho, pi=0, delta_t=1, pi_seq=1000)
+compute_probability_of_freedom <- function(n, phi_prior, alpha_prior, beta_prior, alpha_intro, beta_intro, p_intro, growth_rate, rho, pi=0, delta_t=1, pi_seq=1000)
 {
   # phi_prior must be length 1
   if (length(phi_prior) > 1)
@@ -27,12 +31,23 @@ compute_probability_of_freedom <- function(n, phi_prior, alpha, beta, p_intro, g
     stop( simpleError("phi_prior must be length 1"))
   }  
   
+  # alpha_prior, beta_prior should be length 1
+  if (length(alpha_prior) > 1)
+  {
+    stop( simpleError("alpha_prior must be length 1"))
+  }
+  
+  if (length(beta_prior) > 1)
+  {
+    stop( simpleError("beta_prior must be length 1"))
+  }    
+  
   # the size of n drives the number of steps to take
   n_steps = length(n)
   
   # if any input vector has length > 1 but < n_steps, error out
-  if (!is_valid_length(alpha, 1, n_steps)) stop(simpleError("Vector length mismatch: 'alpha'"))
-  if (!is_valid_length(beta, 1, n_steps)) stop(simpleError("Vector length mismatch: 'beta'"))
+  if (!is_valid_length(alpha_intro, 1, n_steps)) stop(simpleError("Vector length mismatch: 'alpha_intro'"))
+  if (!is_valid_length(beta_intro, 1, n_steps)) stop(simpleError("Vector length mismatch: 'beta_intro'"))
   if (!is_valid_length(p_intro, 1, n_steps)) stop(simpleError("Vector length mismatch: 'p_intro'"))
   if (!is_valid_length(rho, 1, n_steps)) stop(simpleError("Vector length mismatch: 'rho'"))
   if (!is_valid_length(growth_rate, 1, n_steps)) stop(simpleError("Vector length mismatch: 'growth_rate'"))
@@ -40,8 +55,8 @@ compute_probability_of_freedom <- function(n, phi_prior, alpha, beta, p_intro, g
   if (!is_valid_length(delta_t, 1, n_steps)) stop(simpleError("Vector length mismatch: 'delta_t'"))
   
   # make all vectors the same length (matching number of steps)
-  if (length(alpha) < n_steps) alpha <- rep(alpha, n_steps)
-  if (length(beta) < n_steps) beta <- rep(beta, n_steps)
+  if (length(alpha_intro) < n_steps) alpha_intro <- rep(alpha_intro, n_steps)
+  if (length(beta_intro) < n_steps) beta_intro <- rep(beta_intro, n_steps)
   if (length(p_intro) < n_steps) p_intro <- rep(p_intro, n_steps)
   if (length(rho) < n_steps) rho <- rep(rho, n_steps)
   if (length(pi) < n_steps) pi <- rep(pi, n_steps)
@@ -50,8 +65,8 @@ compute_probability_of_freedom <- function(n, phi_prior, alpha, beta, p_intro, g
   
   # Create an instance of PrevPdf
   prevpdf <- PrevPdf$new(
-    alpha = alpha[1],
-    beta = beta[1],
+    alpha = alpha_prior,
+    beta = beta_prior,
     phi_prior = phi_prior,
     pi_seq = seq(0, 1, length.out=pi_seq)
   )
@@ -60,7 +75,7 @@ compute_probability_of_freedom <- function(n, phi_prior, alpha, beta, p_intro, g
   p_eff_freedom_post  <- rep(NA, n_steps)
   for (j in 1:n_steps)
   {
-    prevpdf$update(n[j], alpha[j], beta[j], rho[j], growth_rate[j], delta_t[j], 1 - p_intro[j])
+    prevpdf$update(n[j], alpha_intro[j], beta_intro[j], rho[j], growth_rate[j], delta_t[j], 1 - p_intro[j])
     p_eff_freedom_prior[j] <- prevpdf$compute_cdf(pi[j], step=j, prior=T)
     p_eff_freedom_post[j] <- prevpdf$compute_cdf(pi[j], step=j)
   }
@@ -70,6 +85,7 @@ compute_probability_of_freedom <- function(n, phi_prior, alpha, beta, p_intro, g
                  phi_post            = prevpdf$phi_post,
                  p_eff_freedom_prior = p_eff_freedom_prior,
                  p_eff_freedom_post  = p_eff_freedom_post,
+                 f_prior             = prevpdf$f_prior_list,
                  f_posterior         = prevpdf$f_posterior_list)
   class(result) <- "diseasefree"
   return( result )  

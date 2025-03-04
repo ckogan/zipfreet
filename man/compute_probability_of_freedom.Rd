@@ -7,8 +7,10 @@
 compute_probability_of_freedom(
   n,
   phi_prior,
-  alpha,
-  beta,
+  alpha_prior,
+  beta_prior,
+  alpha_intro,
+  beta_intro,
   p_intro,
   growth_rate,
   rho,
@@ -22,11 +24,17 @@ compute_probability_of_freedom(
 
 \item{phi_prior}{prior probability of freedom}
 
-\item{alpha}{beta distribution alpha shape parameter}
+\item{alpha_prior}{beta distribution alpha parameter for prior prevalence distribution}
 
-\item{beta}{beta distribution beta shape parameter}
+\item{beta_prior}{beta distribution beta parameter for prior prevalence distribution}
 
-\item{p_intro}{probability of introduction}
+\item{alpha_intro}{beta distribution alpha shape parameter}
+
+\item{beta_intro}{beta distribution beta shape parameter}
+
+\item{p_intro}{probability of introduction; if provided as a vector, the
+initial entry corresponds to the probability of introduction
+at time step 2.}
 
 \item{growth_rate}{exponential growth rate}
 
@@ -45,7 +53,7 @@ compute_probability_of_freedom(
 Compute probability of disease freedom given samples taken per timestep
 }
 \examples{
-u <- compute_probability_of_freedom(c(21,4,4,4,4), 0.5, 1, 1, 0.04, 0.01, 0.9, 0.0)
+u <- compute_probability_of_freedom(c(21,4,4,4,4), 0.5, 1, 1, 1, 1, 0.04, 0.01, 0.9, 0.0)
 summary(u)
 plot(u)
 }
