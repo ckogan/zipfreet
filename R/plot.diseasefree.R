@@ -1,7 +1,3 @@
-library(ggplot2)
-library(tidyr)
-
-
 #' @exportS3Method
 plot.diseasefree <- function(object, type="posterior", time=NULL, ...)
 {
@@ -18,9 +14,12 @@ plot.diseasefree <- function(object, type="posterior", time=NULL, ...)
     colname <- paste0("time.", t)
     df[colname] <- sapply(x, object$f_posterior[[t]])
   }
-  df <- gather(df, "time", "value", -x)
+  df <- tidyr::gather(df, "time", "value", -x)
   
-  plt <- ggplot(data=df, mapping=aes(x,value,color=time)) + geom_line()
+  plt <- ggplot2::ggplot(
+                    data=df, 
+                    mapping=ggplot2::aes(x,value,color=time)) +
+            ggplot2::geom_line()
   
   print( plt )
 }
