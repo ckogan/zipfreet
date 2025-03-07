@@ -95,32 +95,7 @@ compute_sample_size <- function(phi_prior, alpha_prior, beta_prior, alpha_intro,
     pi_seq = seq(0, 1, length.out=pi_seq)
   )
   
-  n_required <- rep(NA, n_steps)
-  p_eff_freedom_prior <- rep(NA, n_steps)
-  p_eff_freedom_post  <- rep(NA, n_steps)
-  sensitivity <- rep(NA, n_steps)
-  for (j in 1:n_steps)
-  {
-    threshold_quantile <- dconf[j]
-    if (method == "maintain") {
-      threshold_quantile <- min(c(0.999, threshold_quantile / (1 - p_intro[j])))
-    }
-    n_required[j] <- prevpdf$n_from_cdf(threshold_quantile, pi[j], rho[j])
-    prevpdf$update(n_required[j], alpha_intro[j], beta_intro[j], rho[j], growth_rate[j], delta_t[j], 1 - p_intro[j])
-    p_eff_freedom_prior[j] <- prevpdf$compute_cdf(pi[j], step=j, prior=T)
-    p_eff_freedom_post[j] <- prevpdf$compute_cdf(pi[j], step=j)
-    sensitivity[j] <- prevpdf$sensitivity(j)
-  }
+  result <- prevpdf$compute_sample_size(alpha_intro, beta_intro, p_intro, growth_rate, rho, pi, dconf, delta_t, n_steps, method)
   
-  result <- list(n                   = n_required,
-                 pi                  = pi,
-                 phi_prior           = prevpdf$phi_prior,
-                 phi_post            = prevpdf$phi_post,
-                 p_eff_freedom_prior = p_eff_freedom_prior,
-                 p_eff_freedom_post  = p_eff_freedom_post,
-                 sensitivity         = sensitivity,
-                 f_prior             = prevpdf$f_prior_list,
-                 f_posterior         = prevpdf$f_posterior_list)
-  class(result) <- "diseasefree"
   return( result )
 }

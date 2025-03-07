@@ -282,6 +282,68 @@ PrevPdf <- R6Class("PrevPdf",
 
                        return(cdf)
                      },
+                     
+                     # NOTE that all parameters up to "n_steps" must be vectors
+                     # of length n_steps. 
+                     # !!!! No input validation is done at this stage !!!!
+                     compute_sample_size = function(alpha_intro, beta_intro, p_intro, growth_rate, rho, pi, dconf, delta_t, n_steps, method) {
+                       n_required <- rep(NA, n_steps)
+                       p_eff_freedom_prior <- rep(NA, n_steps)
+                       p_eff_freedom_post  <- rep(NA, n_steps)
+                       sensitivity <- rep(NA, n_steps)
+                       for (j in 1:n_steps)
+                       {
+                         threshold_quantile <- dconf[j]
+                         if (method == "maintain") {
+                           threshold_quantile <- min(c(0.999, threshold_quantile / (1 - p_intro[j])))
+                         }
+                         n_required[j] <- self$n_from_cdf(threshold_quantile, pi[j], rho[j])
+                         self$update(n_required[j], alpha_intro[j], beta_intro[j], rho[j], growth_rate[j], delta_t[j], 1 - p_intro[j])
+                         p_eff_freedom_prior[j] <- self$compute_cdf(pi[j], step=j, prior=T)
+                         p_eff_freedom_post[j] <- self$compute_cdf(pi[j], step=j)
+                         sensitivity[j] <- self$sensitivity(j)
+                       }
+                       
+                       result <- list(n                   = n_required,
+                                      pi                  = pi,
+                                      phi_prior           = self$phi_prior,
+                                      phi_post            = self$phi_post,
+                                      p_eff_freedom_prior = p_eff_freedom_prior,
+                                      p_eff_freedom_post  = p_eff_freedom_post,
+                                      sensitivity         = sensitivity,
+                                      f_prior             = self$f_prior_list,
+                                      f_posterior         = self$f_posterior_list)
+                       class(result) <- "diseasefree"
+                       return( result )
+                     },
+                     
+                     # NOTE all parameters must be vectors of equal length
+                     # !!!! No input validation is done at this stage !!!!
+                     compute_probability_of_freedom = function(n, alpha_intro, beta_intro, p_intro, growth_rate, rho, pi, delta_t) {
+                       n_steps <- length(n)
+                       p_eff_freedom_prior <- rep(NA, n_steps)
+                       p_eff_freedom_post  <- rep(NA, n_steps)
+                       sensitivity <- rep(NA, n_steps)
+                       for (j in 1:n_steps)
+                       {
+                         self$update(n[j], alpha_intro[j], beta_intro[j], rho[j], growth_rate[j], delta_t[j], 1 - p_intro[j])
+                         p_eff_freedom_prior[j] <- self$compute_cdf(pi[j], step=j, prior=T)
+                         p_eff_freedom_post[j] <- self$compute_cdf(pi[j], step=j)
+                         sensitivity[j] <- self$sensitivity(j)
+                       }
+                       
+                       result <- list(n                   = n,
+                                      pi                  = pi,
+                                      phi_prior           = self$phi_prior,
+                                      phi_post            = self$phi_post,
+                                      p_eff_freedom_prior = p_eff_freedom_prior,
+                                      p_eff_freedom_post  = p_eff_freedom_post,
+                                      sensitivity         = sensitivity,
+                                      f_prior             = self$f_prior_list,
+                                      f_posterior         = self$f_posterior_list)
+                       class(result) <- "diseasefree"   
+                       return( result )
+                     },
 
                      n_from_cdf = function(q, pi_value, rho = NULL, n_max = 1000) {
                        

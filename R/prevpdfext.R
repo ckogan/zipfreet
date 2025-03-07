@@ -34,6 +34,7 @@ PrevPdfExt <- R6Class("PrevPdfExt",
                      },
                      
                      determine_schedule_counts = function(desired_cdf_level, pi_value, sampling_timing = NULL, num_steps = NULL, alpha = NULL, beta = NULL, rho = NULL, r = NULL, deltaT = NULL, p_no_intro = NULL) {
+                       lifecycle::deprecate_warn("0.0.1", "determine_schedule_counts()", "prevpdf::compute_sample_size()", always=T)
                        if (is.null(sampling_timing)) {
                          if (is.null(num_steps)) {
                            stop("Please provide 'num_steps' when 'samp_sched' is NULL.")
@@ -69,6 +70,7 @@ PrevPdfExt <- R6Class("PrevPdfExt",
                      },
                      
                      get_freedom = function(only_positive = FALSE, design_prevalence = NULL) {
+                       lifecycle::deprecate_warn("0.0.1", "get_freedom()", "prevpdf::compute_probability_of_freedom()", always=T)
                        if(length(self$phi_post) == 0) {
                          df <- data.frame(
                            `time step` = integer(0),
