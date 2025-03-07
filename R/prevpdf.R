@@ -304,16 +304,18 @@ PrevPdf <- R6Class("PrevPdf",
                        }
 
                        return(low)
-                     }
+                     },
+                     
+                     sensitivity = function(ts = NULL) {
+                       if (is.null(ts)) {
+                         sens <- 1-self$theta / (1-self$phi_prior)
+                       } else {
+                         sens <- 1-self$theta[ts] / (1-self$phi_prior[ts])
+                       }
+                       sens
+                     }                     
                    ),
-                   sensitivity = function(ts = NULL) {
-                     if (is.null(ts)) {
-                       sens <- 1-self$theta / (1-self$phi_prior)
-                     } else {
-                       sens <- 1-self$theta[ts] / (1-self$phi_prior[ts])
-                     }
-                     sens
-                   },
+                   
                    private = list(
                      last_if_null = function(x, param) {
                        if(is.null(x)) {

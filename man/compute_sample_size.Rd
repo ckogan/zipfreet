@@ -62,6 +62,6 @@ threshold at a specified confidence.
 }
 \examples{
 u <- compute_sample_size(0.5, 1, 1, 1, 1, 0.04, 0.01, 0.9, 0, 0.95, n_steps=5)
-summary(u)
+print(u)
 plot(u)
 }

@@ -20,7 +20,7 @@ source("R/prevpdf.R")
 #' @returns "diseasefree" structure including sample sizes and prior/posterior distributions
 #' @examples
 #' u <- compute_probability_of_freedom(c(21,4,4,4,4), 0.5, 1, 1, 1, 1, 0.04, 0.01, 0.9, 0.0)
-#' summary(u)
+#' print(u)
 #' plot(u)
 #' @export
 compute_probability_of_freedom <- function(n, phi_prior, alpha_prior, beta_prior, alpha_intro, beta_intro, p_intro, growth_rate, rho, pi=0, delta_t=1, pi_seq=1000)
@@ -73,18 +73,22 @@ compute_probability_of_freedom <- function(n, phi_prior, alpha_prior, beta_prior
   
   p_eff_freedom_prior <- rep(NA, n_steps)
   p_eff_freedom_post  <- rep(NA, n_steps)
+  sensitivity <- rep(NA, n_steps)
   for (j in 1:n_steps)
   {
     prevpdf$update(n[j], alpha_intro[j], beta_intro[j], rho[j], growth_rate[j], delta_t[j], 1 - p_intro[j])
     p_eff_freedom_prior[j] <- prevpdf$compute_cdf(pi[j], step=j, prior=T)
     p_eff_freedom_post[j] <- prevpdf$compute_cdf(pi[j], step=j)
+    sensitivity[j] <- prevpdf$sensitivity(j)
   }
   
   result <- list(n                   = n,
+                 pi                  = pi,
                  phi_prior           = prevpdf$phi_prior,
                  phi_post            = prevpdf$phi_post,
                  p_eff_freedom_prior = p_eff_freedom_prior,
                  p_eff_freedom_post  = p_eff_freedom_post,
+                 sensitivity         = sensitivity,
                  f_prior             = prevpdf$f_prior_list,
                  f_posterior         = prevpdf$f_posterior_list)
   class(result) <- "diseasefree"
