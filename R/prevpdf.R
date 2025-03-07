@@ -189,6 +189,7 @@ PrevPdf <- R6Class("PrevPdf",
                        lik <- self$likelihood(N, rho)
 
                        self$theta[ts] <- self$get_theta(self$f_prior_list[[ts]], lik)
+
                        self$phi_post[ts] <- self$phi_bayes_update(self$phi_prior[ts], self$theta[ts])
 
                        # Bayes update
@@ -305,7 +306,14 @@ PrevPdf <- R6Class("PrevPdf",
                        return(low)
                      }
                    ),
-                   
+                   sensitivity = function(ts = NULL) {
+                     if (is.null(ts)) {
+                       sens <- 1-self$theta / (1-self$phi_prior)
+                     } else {
+                       sens <- 1-self$theta[ts] / (1-self$phi_prior[ts])
+                     }
+                     sens
+                   },
                    private = list(
                      last_if_null = function(x, param) {
                        if(is.null(x)) {
