@@ -33,7 +33,7 @@ PrevPdfExt <- R6Class("PrevPdfExt",
                        }
                      },
                      
-                     determine_schedule_counts = function(desired_cdf_level, pi_value, sampling_timing = NULL, num_steps = NULL, alpha = NULL, beta = NULL, rho = NULL, r = NULL, deltaT = NULL, p_no_intro = NULL) {
+                     determine_schedule_counts = function(desired_cdf_level, pi_value, sampling_timing = NULL, num_steps = NULL, alpha = NULL, beta = NULL, rho = NULL, r = NULL, deltaT = NULL, p_no_intro = NULL, method = "restore") {
                        lifecycle::deprecate_warn("0.0.1", "determine_schedule_counts()", "prevpdf::compute_sample_size()", always=T)
                        if (is.null(sampling_timing)) {
                          if (is.null(num_steps)) {
@@ -59,16 +59,39 @@ PrevPdfExt <- R6Class("PrevPdfExt",
                        deltaT_list <- self$.expand_param(deltaT, num_steps, NA)
                        p_no_intro_list <- self$.expand_param(p_no_intro, num_steps, NA)
                        
+
                        for (i in seq_len(num_steps)) {
                          if (sampling_timing[i] == 0) {
                            n_required <- 0
                          } else {
-                           n_required <- self$n_from_cdf(desired_cdf_level, pi_value, rho_list[i])
+                           if(method == "restore") {
+                             desired_cdf_level_i <- desired_cdf_level
+                           } else if(method == "maintain") {
+                             if(i == length(sampling_timing)) { # Choose length of last gap
+                               gap <- tail(diff(which(sampling_timing>0)),1)
+                               denom <- (p_no_intro_list[i])^gap
+                               desired_cdf_level_i <- min(c(0.999,desired_cdf_level / denom))
+                               
+                             } else {
+                               gap <- next_nonzero_ix(sampling_timing, i) - i
+                               denom <- (prod(p_no_intro_list[(i+1):(i+gap)]))
+                               desired_cdf_level_i <- min(c(0.999,desired_cdf_level / denom))
+                             }
+                           } else {
+                             stop("Incorrect type argument")
+                           }
+                           n_required <- self$n_from_cdf(desired_cdf_level_i, pi_value, rho_list[i])
                          }
                          self$update(n_required, alpha = alpha_list[i], beta = beta_list[i], rho = rho_list[i], r = r_list[i], deltaT = deltaT_list[i], p_no_intro = p_no_intro_list[i])
                        }
                      },
-                     
+                     next_nonzero_ix = function(x, i) {
+                       j <- i+1
+                       while(x[j] == 0) {
+                         j <- j + 1
+                       }
+                       j
+                     },
                      get_freedom = function(only_positive = FALSE, design_prevalence = NULL) {
                        lifecycle::deprecate_warn("0.0.1", "get_freedom()", "prevpdf::compute_probability_of_freedom()", always=T)
                        if(length(self$phi_post) == 0) {
