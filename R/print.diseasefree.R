@@ -7,7 +7,7 @@ print.diseasefree <- function(object, ...)
   for (j in 1:nrow)
   {
     cat(sprintf("%4d %5d %15.3f %14.3f %10.3f\n", 
-      j, object$n[j], object$p_eff_freedom_prior[j], 
-      object$p_eff_freedom_post[j], object$sensitivity[j]))
+      j, object$n[j], object$p_freedom_prior[j], 
+      object$p_freedom_post[j], object$sensitivity[j]))
   }
 }
