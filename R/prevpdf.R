@@ -149,7 +149,9 @@ PrevPdf <- R6Class("PrevPdf",
                            integrate(
                              function(x) f_pi(x) * f_intro((pi_t_prime - x) / (1 - x)) / (1 - x),
                              0,
-                             pi_t_prime
+                             pi_t_prime,
+                             rel.tol = 1e-12, 
+                             abs.tol = 1e-12
                            )$value
                          }, error = function(e) {
                            # Provide a more helpful error message
