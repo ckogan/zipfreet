@@ -73,7 +73,7 @@ PrevPdfExt <- R6Class("PrevPdfExt",
                                desired_cdf_level_i <- min(c(0.999,desired_cdf_level / denom))
                                
                              } else {
-                               gap <- next_nonzero_ix(sampling_timing, i) - i
+                               gap <- self$next_nonzero_ix(sampling_timing, i) - i
                                denom <- (prod(p_no_intro_list[(i+1):(i+gap)]))
                                desired_cdf_level_i <- min(c(0.999,desired_cdf_level / denom))
                              }
