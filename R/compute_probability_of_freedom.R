@@ -68,7 +68,7 @@ compute_probability_of_freedom <- function(n, phi_prior, alpha_prior, beta_prior
     alpha = alpha_prior,
     beta = beta_prior,
     phi_prior = phi_prior,
-    pi_seq = seq(0, 1, length.out=pi_seq)
+    pi_seq = seq(1e-6, 1-1e-6, length.out=pi_seq)
   )
 
   result <- prevpdf$compute_probability_of_freedom(n, alpha_intro, beta_intro, p_intro, growth_rate, rho, pi, delta_t)

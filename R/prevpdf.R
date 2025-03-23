@@ -52,7 +52,9 @@ PrevPdf <- R6Class("PrevPdf",
                        self$p_no_intro <- c(self$phi_prior)
 
                        # Initialize functions that depend on parameters
+  
                        self$f_prior_list <- list(self$store(self$f_pi_pos(self$alpha[1], self$beta[1], self$phi_prior[1])))
+
                        self$f_posterior <- NULL
 
                        # Initialize the list to store posterior distributions for each step
@@ -149,9 +151,7 @@ PrevPdf <- R6Class("PrevPdf",
                            integrate(
                              function(x) f_pi(x) * f_intro((pi_t_prime - x) / (1 - x)) / (1 - x),
                              0,
-                             pi_t_prime,
-                             rel.tol = 1e-12, 
-                             abs.tol = 1e-12
+                             pi_t_prime-5e-03
                            )$value
                          }, error = function(e) {
                            # Provide a more helpful error message
