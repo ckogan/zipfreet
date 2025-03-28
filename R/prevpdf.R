@@ -107,16 +107,47 @@ PrevPdf <- R6Class("PrevPdf",
                        return(self$clone(deep = TRUE))
                      },
 
-
+                     determine_evaluation_points = function(f, a, b, tol=1.e-5, fa=NULL, fb=NULL)
+                     {
+                       if (is.null(fa))
+                         fa = f(a)
+                       
+                       if (is.null(fb))
+                         fb = f(b)
+                       
+                       # evaluate f at midpoint
+                       m = (a + b) / 2
+                       fm_e = f(m)
+                       
+                       # compute linear interpolation at midpoint
+                       fm_i = (fa + fb) / 2
+                       
+                       # if error is greater than tolerance, then split interval,
+                       # otherwise return current interval
+                       if ( abs(fm_e - fm_i) > tol )
+                       {
+                         left <- determine_evaluation_points(f, a, m, tol, fa, fm_e)
+                         right <- determine_evaluation_points(f, m, b, tol, fm_e, fb)
+                         # "m" will be returned by both sides, so remove it from the right side...
+                         return( c(left, right[-1]) )
+                       } 
+                       else
+                       {
+                         return( c(a, b) )
+                       }
+                     },                     
+                     
                      store = function(f) {
-                       tol <- 1e-6
-                       sf <- splinefun(self$pi_seq, f(self$pi_seq))
-                       dpi <- self$pi_seq[2] - self$pi_seq[1]
-                       checkx <- self$pi_seq + dpi/2
-                       checkx <- checkx[-length(checkx)]
-                       err <- abs(f(checkx) - sf(checkx))
-                       if(any(err > tol)) stop("Splinefun below desired tol")
-                       sf
+                       xx <- determine_evaluation_points(f, 1e-6, 1-1e-6)
+                       splinefun(xx, f(xx))
+                       #tol <- 1e-6
+                       #sf <- splinefun(self$pi_seq, f(self$pi_seq))
+                       #dpi <- self$pi_seq[2] - self$pi_seq[1]
+                       #checkx <- self$pi_seq + dpi/2
+                       #checkx <- checkx[-length(checkx)]
+                       #err <- abs(f(checkx) - sf(checkx))
+                       #if(any(err > tol)) stop("Splinefun below desired tol")
+                       #sf
                      },
 
                      f_pi_pos = function(alpha, beta, phi) {
