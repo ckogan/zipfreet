@@ -126,8 +126,8 @@ PrevPdf <- R6Class("PrevPdf",
                        # otherwise return current interval
                        if ( abs(fm_e - fm_i) > tol )
                        {
-                         left <- determine_evaluation_points(f, a, m, tol, fa, fm_e)
-                         right <- determine_evaluation_points(f, m, b, tol, fm_e, fb)
+                         left <- self$determine_evaluation_points(f, a, m, tol, fa, fm_e)
+                         right <- self$determine_evaluation_points(f, m, b, tol, fm_e, fb)
                          # "m" will be returned by both sides, so remove it from the right side...
                          return( c(left, right[-1]) )
                        } 
@@ -138,7 +138,7 @@ PrevPdf <- R6Class("PrevPdf",
                      },                     
                      
                      store = function(f) {
-                       xx <- determine_evaluation_points(f, 1e-6, 1-1e-6)
+                       xx <- self$determine_evaluation_points(f, 1e-6, 1-1e-6)
                        splinefun(xx, f(xx))
                        #tol <- 1e-6
                        #sf <- splinefun(self$pi_seq, f(self$pi_seq))
