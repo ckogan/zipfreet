@@ -138,16 +138,22 @@ PrevPdf <- R6Class("PrevPdf",
                      },                     
                      
                      store = function(f) {
-                       xx <- self$determine_evaluation_points(f, 1e-6, 1-1e-6)
-                       splinefun(xx, f(xx))
-                       #tol <- 1e-6
-                       #sf <- splinefun(self$pi_seq, f(self$pi_seq))
-                       #dpi <- self$pi_seq[2] - self$pi_seq[1]
-                       #checkx <- self$pi_seq + dpi/2
-                       #checkx <- checkx[-length(checkx)]
-                       #err <- abs(f(checkx) - sf(checkx))
-                       #if(any(err > tol)) stop("Splinefun below desired tol")
-                       #sf
+                       if(F) {
+                         xx <- self$determine_evaluation_points(f, 1e-6, 1-1e-6)
+                         splinefun(xx, f(xx))
+                         #tol <- 1e-6
+                         #sf <- splinefun(self$pi_seq, f(self$pi_seq))
+                         #dpi <- self$pi_seq[2] - self$pi_seq[1]
+                         #checkx <- self$pi_seq + dpi/2
+                         #checkx <- checkx[-length(checkx)]
+                         #err <- abs(f(checkx) - sf(checkx))
+                         #if(any(err > tol)) stop("Splinefun below desired tol")
+                         #sf
+                       } else {
+                         sf <- splinefun(self$pi_seq, f(self$pi_seq))
+                         sf
+                       }
+
                      },
 
                      f_pi_pos = function(alpha, beta, phi) {
