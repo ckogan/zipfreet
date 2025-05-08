@@ -332,7 +332,7 @@ PrevPdf <- R6Class("PrevPdf",
                      # NOTE that all parameters up to "n_steps" must be vectors
                      # of length n_steps. 
                      # !!!! No input validation is done at this stage !!!!
-                     compute_sample_size = function(alpha_intro, beta_intro, p_intro, growth_rate, rho, pi, dconf, delta_t, n_steps, method) {
+                     compute_sample_size = function(alpha_intro, beta_intro, p_intro, growth_rate, rho, pi, dconf, delta_t, n_steps, method, n_max = 1000) {
                        n_required <- rep(NA, n_steps)
                        p_eff_freedom_prior <- rep(NA, n_steps)
                        p_eff_freedom_post  <- rep(NA, n_steps)
@@ -343,7 +343,7 @@ PrevPdf <- R6Class("PrevPdf",
                          if (method == "maintain") {
                            threshold_quantile <- min(c(0.999, threshold_quantile / (1 - p_intro[j])))
                          }
-                         n_required[j] <- self$n_from_cdf(threshold_quantile, pi[j], rho[j])
+                         n_required[j] <- self$n_from_cdf(threshold_quantile, pi[j], rho[j], n_max)
                          self$update(n_required[j], alpha_intro[j], beta_intro[j], rho[j], growth_rate[j], delta_t[j], 1 - p_intro[j])
                          p_eff_freedom_prior[j] <- self$compute_cdf(pi[j], step=j, prior=T)
                          p_eff_freedom_post[j] <- self$compute_cdf(pi[j], step=j)

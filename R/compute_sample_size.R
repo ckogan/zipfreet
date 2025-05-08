@@ -20,13 +20,14 @@ source("R/prevpdf.R")
 #' @param n_steps number of time units to step
 #' @param method  "restore" or "maintain"
 #' @param pi_seq discretization granularity
+#' @param n_max maximum sample size
 #' @returns "diseasefree" structure including sample sizes and prior/posterior distributions
 #' @examples
 #' u <- compute_sample_size(0.5, 1, 1, 1, 1, 0.04, 0.01, 0.9, 0, 0.95, n_steps=5)
 #' print(u)
 #' plot(u)
 #' @export
-compute_sample_size <- function(phi_prior, alpha_prior, beta_prior, alpha_intro, beta_intro, p_intro, growth_rate, rho, pi, dconf, delta_t=1, n_steps=1, method="restore", pi_seq=1000)
+compute_sample_size <- function(phi_prior, alpha_prior, beta_prior, alpha_intro, beta_intro, p_intro, growth_rate, rho, pi, dconf, delta_t=1, n_steps=1, method="restore", pi_seq=1000, n_max = 1000)
 {
   # phi_prior must be length 1
   if (length(phi_prior) > 1)
@@ -95,7 +96,7 @@ compute_sample_size <- function(phi_prior, alpha_prior, beta_prior, alpha_intro,
     pi_seq = seq(1e-6, 1-1e-6,, length.out=pi_seq)
   )
   
-  result <- prevpdf$compute_sample_size(alpha_intro, beta_intro, p_intro, growth_rate, rho, pi, dconf, delta_t, n_steps, method)
+  result <- prevpdf$compute_sample_size(alpha_intro, beta_intro, p_intro, growth_rate, rho, pi, dconf, delta_t, n_steps, method, n_max)
   
   return( result )
 }
