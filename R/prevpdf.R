@@ -341,7 +341,13 @@ PrevPdf <- R6Class("PrevPdf",
                        {
                          threshold_quantile <- dconf[j]
                          if (method == "maintain") {
-                           threshold_quantile <- min(c(0.999, threshold_quantile / (1 - p_intro[j])))
+                           if(pi[j] == 0)
+                             pintro_above <- p_intro[j]
+                           else {
+                             f_intro <- self$f_pi_pos(alpha_intro[j], beta_intro[j], 1-p_intro[j])
+                             pintro_above <- integrate(f_intro, pi[j], 1)$value
+                           }
+                           threshold_quantile <- min(c(0.999, threshold_quantile / (1 - pintro_above)))
                          }
                          n_required[j] <- self$n_from_cdf(threshold_quantile, pi[j], rho[j], n_max)
                          self$update(n_required[j], alpha_intro[j], beta_intro[j], rho[j], growth_rate[j], delta_t[j], 1 - p_intro[j])
