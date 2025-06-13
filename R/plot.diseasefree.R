@@ -12,7 +12,7 @@ plot.diseasefree <- function(object, type="posterior", time=NULL, ...)
   for (t in time)
   {
     colname <- paste0("time.", t)
-    df[colname] <- sapply(x, object$f_posterior[[t]])
+    df[colname] <- sapply(x, object$f_posterior[[t]]$f)
   }
   df <- tidyr::gather(df, "time", "value", -x)
   
