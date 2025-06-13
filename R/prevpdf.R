@@ -106,58 +106,18 @@ PrevPdf <- R6Class("PrevPdf",
                      deep_copy = function() {
                        return(self$clone(deep = TRUE))
                      },
-
-                     determine_evaluation_points = function(f, a, b, tol=1.e-5, fa=NULL, fb=NULL)
-                     {
-                       if (is.null(fa))
-                         fa = f(a)
-                       
-                       if (is.null(fb))
-                         fb = f(b)
-                       
-                       # evaluate f at midpoint
-                       m = (a + b) / 2
-                       fm_e = f(m)
-                       
-                       # compute linear interpolation at midpoint
-                       fm_i = (fa + fb) / 2
-                       
-                       # if error is greater than tolerance, then split interval,
-                       # otherwise return current interval
-                       if ( abs(fm_e - fm_i) > tol )
-                       {
-                         left <- self$determine_evaluation_points(f, a, m, tol, fa, fm_e)
-                         right <- self$determine_evaluation_points(f, m, b, tol, fm_e, fb)
-                         # "m" will be returned by both sides, so remove it from the right side...
-                         return( c(left, right[-1]) )
-                       } 
-                       else
-                       {
-                         return( c(a, b) )
-                       }
-                     },                     
                      
-                     store = function(f) {
-                       if(F) {
-                         xx <- self$determine_evaluation_points(f, 1e-6, 1-1e-6)
-                         splinefun(xx, f(xx))
-                         #tol <- 1e-6
-                         #sf <- splinefun(self$pi_seq, f(self$pi_seq))
-                         #dpi <- self$pi_seq[2] - self$pi_seq[1]
-                         #checkx <- self$pi_seq + dpi/2
-                         #checkx <- checkx[-length(checkx)]
-                         #err <- abs(f(checkx) - sf(checkx))
-                         #if(any(err > tol)) stop("Splinefun below desired tol")
-                         #sf
-                       } else {
-                         sf <- splinefun(self$pi_seq, f(self$pi_seq))
-                         sf
-                       }
-
+                     store = function(F) {
+                         # make sure peak points are included!
+                         S <- sort(F$peaks, self$pi_seq)
+                         splinefun(S, F$f(S))
                      },
 
                      f_pi_pos = function(alpha, beta, phi) {
-                       function(pi) (1 - phi) * dbeta(pi, alpha, beta)
+                       list(
+                         f = function(pi) (1-phi) * dbeta(pi, alpha, beta),
+                         peaks = c(alpha / (alpha+beta))
+                       )
                      },
 
                      likelihood = function(N, rho) {
@@ -165,7 +125,8 @@ PrevPdf <- R6Class("PrevPdf",
                      },
 
                      get_theta = function(f, lik) {
-                       integrate(function(pi) lik(pi) * f(pi), 0, 1)$value
+                       #  integrate(function(pi) lik(pi) * f(pi), 0, 1)$value
+                       self$integrate_(list(f=function(pi) lik(pi) * f$f(pi), peaks=f$peaks), 0, 1)
                      },
 
                      phi_bayes_update = function(phi, theta_val) {
@@ -173,9 +134,18 @@ PrevPdf <- R6Class("PrevPdf",
                      },
 
                      f_pi_bayes_update = function(theta_val, phi_t, lik, f) {
-                       function(pi) lik(pi) * f(pi) / (phi_t + theta_val)
+                       #  function(pi) lik(pi) * f(pi) / (phi_t + theta_val)
+                       list(
+                         f = function(pi) lik(pi) * f$f(pi) / (phi_t + theta_val),
+                         peaks = f$peaks
+                       )
                      },
 
+                     G = function(pi, r, deltaT)
+                     {
+                       1 / (1 + ((1-pi)/pi) * exp(-r * deltaT))
+                     },
+                     
                      Ginv = function(pi, r, deltaT) {
                        1 / (1 + (1 / pi - 1) * exp(r * deltaT))
                      },
@@ -185,34 +155,30 @@ PrevPdf <- R6Class("PrevPdf",
                      },
 
                      f_pi_time_update = function(f, r, deltaT) {
-                       function(pi) self$dGinv(pi, r, deltaT) * f(self$Ginv(pi, r, deltaT))
+                       #  function(pi) self$dGinv(pi, r, deltaT) * f(self$Ginv(pi, r, deltaT))
+                       list(
+                         f = function(pi) dGinv(pi, r, deltaT) * f$f(Ginv(pi, r, deltaT)),
+                         peaks = G(f$peaks, r, deltaT)
+                       )
                      },
 
-                     f_pi_introduction_update = function(f_pi, phi_t, f_intro, p_no_intro) {
-                       f <- function(pi_t_prime) {
-                         # Attempt integration and catch any errors
-                         integral_value <- tryCatch({
-                           integrate(
-                             function(x) f_pi(x) * f_intro((pi_t_prime - x) / (1 - x)) / (1 - x),
-                             0,
-                             pi_t_prime-5e-03
-                           )$value
-                         }, error = function(e) {
-                           # Provide a more helpful error message
-                           stop(
-                             "Integration failed in f_pi_introduction_update. ",
-                             "This may occur if pi_seq is too coarse or parameters lead to a non-integrable scenario.\n",
-                             "Suggestion: Increase length.out in pi_seq or adjust model parameters.\n",
-                             "Original error: ", conditionMessage(e)
-                           )
-                         })
-                         # If integration succeeded, compute the final value
-                         p_no_intro * f_pi(pi_t_prime) +
-                           phi_t * f_intro(pi_t_prime) +
+                     f_pi_introduction_update = function(f_pi, phi_t, f_intro, p_no_intro)
+                     {
+                       f <- function(pi_t_prime)
+                       {
+                         newF <- list(
+                           f = function(x) f_pi$f(x) * f_intro$f((pi_t_prime - x) / (1 - x)) / (1 - x),
+                           peaks = sort(c(f_pi$peaks, f_intro$peaks))
+                         )
+                         integral_value = integrate_(newF, 0, pt_t_prime - 5e-03)
+                         
+                         p_no_intro * f_pi$f(pi_t_prime) +
+                           phi_t * f_intro$f(pi_t_prime) +
                            integral_value
                        }
                        function(x) vapply(x, f, 0)
                      },
+                     
                      update = function(N, alpha = NULL, beta = NULL, rho = NULL, r = NULL, deltaT = NULL, p_no_intro = NULL) {
                        if(length(N) > 1) stop("N must be length 1")
                        if(length(alpha) > 1) stop("alpha must be length 1")
@@ -263,8 +229,6 @@ PrevPdf <- R6Class("PrevPdf",
 
                        # Create introduction distribution
                        f_intro <- self$f_pi_pos(alpha, beta, p_no_intro)
-
-                       
 
                        # Apply introduction update
                        self$f_prior_list[[ts]] <- self$store(
@@ -345,7 +309,7 @@ PrevPdf <- R6Class("PrevPdf",
                              pintro_above <- p_intro[j]
                            else {
                              f_intro <- self$f_pi_pos(alpha_intro[j], beta_intro[j], 1-p_intro[j])
-                             pintro_above <- integrate(f_intro, pi[j], 1)$value
+                             pintro_above <- integrate_(f_intro, pi[j], 1)
                            }
                            threshold_quantile <- min(c(0.999, threshold_quantile / (1 - pintro_above)))
                          }
@@ -445,7 +409,36 @@ PrevPdf <- R6Class("PrevPdf",
                          x
                        }
                        
-                     }                       
+                     },
+                     
+                     integrate_ = function(F, lower, upper)
+                     {
+                       sum <- 0
+                       
+                       n_peaks <- length(F$peaks)
+                       
+                       # find first peak AFTER lower integration limit
+                       index <- 1
+                       while (index <= n_peaks && F$peaks[index] < lower)
+                       {
+                         index <- index + 1
+                       }
+                       
+                       # integrate across all spikes in [lower, upper]
+                       a <- lower
+                       while (index <= n_peaks && F$peaks[index] < upper)
+                       {
+                         b <- F$peaks[index]
+                         sum <- sum + integrate(F$f, a, b)$value
+                         a <- b
+                         index <- index + 1
+                       }
+                       
+                       # integrate from final relevant peak to upper integration limit
+                       sum <- sum + integrate(F$f, a, upper)$value
+                       
+                       return(sum)
+                     }
                    )
 )
 
