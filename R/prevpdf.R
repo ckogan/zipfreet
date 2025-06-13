@@ -109,8 +109,8 @@ PrevPdf <- R6Class("PrevPdf",
                      
                      store = function(F) {
                          # make sure peak points are included!
-                         S <- sort(F$peaks, self$pi_seq)
-                         splinefun(S, F$f(S))
+                         S <- sort(c(F$peaks, self$pi_seq))
+                         list(f=splinefun(S, F$f(S)), peaks=F$peaks)
                      },
 
                      f_pi_pos = function(alpha, beta, phi) {
@@ -125,8 +125,8 @@ PrevPdf <- R6Class("PrevPdf",
                      },
 
                      get_theta = function(f, lik) {
-                       #  integrate(function(pi) lik(pi) * f(pi), 0, 1)$value
-                       self$integrate_(list(f=function(pi) lik(pi) * f$f(pi), peaks=f$peaks), 0, 1)
+                       #integrate(function(pi) lik(pi) * f(pi), 0, 1)$value
+                       private$integrate_(list(f=function(pi) lik(pi) * f$f(pi), peaks=f$peaks), 0, 1)
                      },
 
                      phi_bayes_update = function(phi, theta_val) {
@@ -157,8 +157,8 @@ PrevPdf <- R6Class("PrevPdf",
                      f_pi_time_update = function(f, r, deltaT) {
                        #  function(pi) self$dGinv(pi, r, deltaT) * f(self$Ginv(pi, r, deltaT))
                        list(
-                         f = function(pi) dGinv(pi, r, deltaT) * f$f(Ginv(pi, r, deltaT)),
-                         peaks = G(f$peaks, r, deltaT)
+                         f = function(pi) self$dGinv(pi, r, deltaT) * f$f(self$Ginv(pi, r, deltaT)),
+                         peaks = self$G(f$peaks, r, deltaT)
                        )
                      },
 
@@ -170,13 +170,13 @@ PrevPdf <- R6Class("PrevPdf",
                            f = function(x) f_pi$f(x) * f_intro$f((pi_t_prime - x) / (1 - x)) / (1 - x),
                            peaks = sort(c(f_pi$peaks, f_intro$peaks))
                          )
-                         integral_value = integrate_(newF, 0, pt_t_prime - 5e-03)
+                         integral_value = private$integrate_(newF, 0, pi_t_prime - 5e-03)
                          
                          p_no_intro * f_pi$f(pi_t_prime) +
                            phi_t * f_intro$f(pi_t_prime) +
                            integral_value
                        }
-                       function(x) vapply(x, f, 0)
+                       list(f=function(x) vapply(x, f, 0), peaks=c())
                      },
                      
                      update = function(N, alpha = NULL, beta = NULL, rho = NULL, r = NULL, deltaT = NULL, p_no_intro = NULL) {
@@ -261,7 +261,7 @@ PrevPdf <- R6Class("PrevPdf",
                          phi <- self$phi_post[step]
                          fn <- self$f_posterior_list[[step]]
                        }
-                       phi + integrate(fn, 0, pi)$value
+                       phi + private$integrate_(fn, 0, pi)
                      },
 
 
@@ -288,7 +288,7 @@ PrevPdf <- R6Class("PrevPdf",
                        )
 
                        # Compute cumulative density
-                       cdf <- phi_post + integrate(f_posterior, 0, pi)$value
+                       cdf <- phi_post + private$integrate_(f_posterior, 0, pi)
 
                        return(cdf)
                      },
@@ -309,7 +309,7 @@ PrevPdf <- R6Class("PrevPdf",
                              pintro_above <- p_intro[j]
                            else {
                              f_intro <- self$f_pi_pos(alpha_intro[j], beta_intro[j], 1-p_intro[j])
-                             pintro_above <- integrate_(f_intro, pi[j], 1)
+                             pintro_above <- private$integrate_(f_intro, pi[j], 1)
                            }
                            threshold_quantile <- min(c(0.999, threshold_quantile / (1 - pintro_above)))
                          }
