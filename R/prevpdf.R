@@ -136,6 +136,7 @@ PrevPdf <- R6Class("PrevPdf",
 
                      f_pi_bayes_update = function(theta_val, phi_t, lik, f) {
                        #  function(pi) lik(pi) * f(pi) / (phi_t + theta_val)
+                     #  force(theta_val)
                        list(
                          f = function(pi) lik(pi) * f$f(pi) / (phi_t + theta_val),
                          peaks = f$peaks
@@ -433,7 +434,7 @@ PrevPdf <- R6Class("PrevPdf",
                          b <- F$peaks[index]
                          if (a + .Machine$double.eps < b)
                          {
-                           sum <- sum + integrate(F$f, a, b)$value
+                           sum <- sum + integrate(F$f, a, b, stop.on.error=FALSE)$value
                            a <- b
                          }
                          index <- index + 1
@@ -442,7 +443,7 @@ PrevPdf <- R6Class("PrevPdf",
                        # integrate from final relevant peak to upper integration limit
                        if (a + .Machine$double.eps < upper)
                        {
-                         sum <- sum + integrate(F$f, a, upper)$value
+                         sum <- sum + integrate(F$f, a, upper, stop.on.error=FALSE)$value
                        }
                        
                        return(sum)
