@@ -111,6 +111,7 @@ PrevPdf <- R6Class("PrevPdf",
                          # make sure peak points are included!
                          S <- sort(c(F$peaks, self$pi_seq))
                          list(f=splinefun(S, F$f(S)), peaks=F$peaks)
+                    #   F
                      },
 
                      f_pi_pos = function(alpha, beta, phi) {
@@ -171,7 +172,7 @@ PrevPdf <- R6Class("PrevPdf",
                            f = function(x) f_pi$f(x) * f_intro$f((pi_t_prime - x) / (1 - x)) / (1 - x),
                            peaks = new_peaks
                          )
-                         integral_value = private$integrate_(newF, 0, pi_t_prime - 5e-03)
+                         integral_value = private$integrate_(newF, 0, max(c(0, pi_t_prime - 5e-03)))
                          
                          p_no_intro * f_pi$f(pi_t_prime) +
                            phi_t * f_intro$f(pi_t_prime) +
@@ -430,13 +431,19 @@ PrevPdf <- R6Class("PrevPdf",
                        while (index <= n_peaks && F$peaks[index] < upper)
                        {
                          b <- F$peaks[index]
-                         sum <- sum + integrate(F$f, a, b)$value
-                         a <- b
+                         if (a + .Machine$double.eps < b)
+                         {
+                           sum <- sum + integrate(F$f, a, b)$value
+                           a <- b
+                         }
                          index <- index + 1
                        }
                        
                        # integrate from final relevant peak to upper integration limit
-                       sum <- sum + integrate(F$f, a, upper)$value
+                       if (a + .Machine$double.eps < upper)
+                       {
+                         sum <- sum + integrate(F$f, a, upper)$value
+                       }
                        
                        return(sum)
                      }
