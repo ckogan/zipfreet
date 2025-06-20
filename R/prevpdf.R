@@ -166,20 +166,22 @@ PrevPdf <- R6Class("PrevPdf",
 
                      f_pi_introduction_update = function(f_pi, phi_t, f_intro, p_no_intro)
                      {
-                       new_peaks <- sort(c(f_pi$peaks, f_intro$peaks))
                        f <- function(pi_t_prime)
                        {
+                         pks <- c(f_pi$peaks, (pi_t_prime - f_intro$peaks) / (1 - f_intro$peaks))
+                         pks[pks < 0] <- 0
+                         pks <- unique(sort(pks))
                          newF <- list(
                            f = function(x) f_pi$f(x) * f_intro$f((pi_t_prime - x) / (1 - x)) / (1 - x),
-                           peaks = new_peaks
+                           peaks = pks
                          )
-                         integral_value = private$integrate_(newF, 0, max(c(0, pi_t_prime - 5e-03)))
+                         integral_value = private$integrate_(newF, 0, pi_t_prime) #max(c(0, pi_t_prime - 5e-03)))
                          
                          p_no_intro * f_pi$f(pi_t_prime) +
                            phi_t * f_intro$f(pi_t_prime) +
                            integral_value
                        }
-                       list(f=function(x) vapply(x, f, 0), peaks=new_peaks)
+                       list(f=function(x) vapply(x, f, 0), peaks=sort(c(f_pi$peaks, f_intro$peaks)))
                      },
                      
                      update = function(N, alpha = NULL, beta = NULL, rho = NULL, r = NULL, deltaT = NULL, p_no_intro = NULL) {
