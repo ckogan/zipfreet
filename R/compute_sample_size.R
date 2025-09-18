@@ -21,7 +21,7 @@ source("R/prevpdf.R")
 #' @param method  "restore" or "maintain"
 #' @param pi_seq discretization granularity
 #' @param n_max maximum sample size
-#' @returns "diseasefree" structure including sample sizes and prior/posterior distributions
+#' @returns "zipfreet" structure including sample sizes and prior/posterior distributions
 #' @examples
 #' u <- compute_sample_size(0.5, 1, 1, 1, 1, 0.04, 0.01, 0.9, 0, 0.95, n_steps=5)
 #' print(u)

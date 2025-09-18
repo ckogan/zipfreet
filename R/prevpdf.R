@@ -334,7 +334,7 @@ PrevPdf <- R6Class("PrevPdf",
                                       sensitivity         = sensitivity,
                                       f_prior             = self$f_prior_list,
                                       f_posterior         = self$f_posterior_list)
-                       class(result) <- "diseasefree"
+                       class(result) <- "zipfreet"
                        return( result )
                      },
                      
@@ -362,7 +362,7 @@ PrevPdf <- R6Class("PrevPdf",
                                       sensitivity         = sensitivity,
                                       f_prior             = self$f_prior_list,
                                       f_posterior         = self$f_posterior_list)
-                       class(result) <- "diseasefree"   
+                       class(result) <- "zipfreet"   
                        return( result )
                      },
 

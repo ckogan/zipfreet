@@ -17,7 +17,7 @@ source("R/prevpdf.R")
 #' @param pi design threshold
 #' @param delta_t test time duration
 #' @param pi_seq discretization granularity
-#' @returns "diseasefree" structure including sample sizes and prior/posterior distributions
+#' @returns "zipfreet" structure including sample sizes and prior/posterior distributions
 #' @examples
 #' u <- compute_probability_of_freedom(c(21,4,4,4,4), 0.5, 1, 1, 1, 1, 0.04, 0.01, 0.9, 0.0)
 #' print(u)
