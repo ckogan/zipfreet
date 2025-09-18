@@ -1,5 +1,5 @@
 #' @exportS3Method
-plot.diseasefree <- function(object, type="posterior", time=NULL, ...)
+plot.zipfreet <- function(object, type="posterior", time=NULL, ...)
 {
   if (length(time) == 0)
   {

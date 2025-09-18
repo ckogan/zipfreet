@@ -1,5 +1,5 @@
 #' @exportS3Method
-print.diseasefree <- function(object, ...)
+print.zipfreet <- function(object, ...)
 {
   nrow <- length(object$n)
   cat("time     n p_freedom_prior p_freedom_post p(R+ | D+)\n")
