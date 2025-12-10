@@ -175,7 +175,7 @@ PrevPdf <- R6Class("PrevPdf",
                            f = function(x) f_pi$f(x) * f_intro$f((pi_t_prime - x) / (1 - x)) / (1 - x),
                            peaks = pks
                          )
-                         integral_value = private$integrate_(newF, 0, pi_t_prime) #max(c(0, pi_t_prime - 5e-03)))
+                         integral_value = private$integrate_(newF, 0, max(0, pi_t_prime - 1e-10))
                          
                          p_no_intro * f_pi$f(pi_t_prime) +
                            phi_t * f_intro$f(pi_t_prime) +
